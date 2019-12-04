@@ -6,10 +6,10 @@ var Schema = mongoose.Schema;
 var userSchema = new Schema(
 	{
 		email: { type: String, required: true, unique: true },
-		password: String,
+		password: { type: String, required: true },
 		name: String,
 		phone: String,
-		bank: { type: String, required: true },
+		bank: String,
 		balance: [
 			{
 				coin: { type: Schema.Types.ObjectId, ref: "coin" },

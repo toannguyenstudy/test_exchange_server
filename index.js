@@ -1,9 +1,15 @@
 const express = require("express");
 const app = express();
 require("./db");
+var cors = require("cors");
 
 const bodyParser = require("body-parser");
 
+app.use(
+	cors({
+		origin: "http://localhost:8100"
+	})
+);
 app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({ extended: true }));
 

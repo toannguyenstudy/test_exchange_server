@@ -42,8 +42,27 @@ router.post("/register", (req, res) => {
 			if (u) throw new Error("email existed");
 
 			return User.create({ email, password })
-				.then(u => {
-					res.send(u);
+				.then(user => {
+					var token = jwt.sign(
+						{
+							_id: user._id,
+							email: user.email
+						},
+						"toannguyen",
+						{
+							expiresIn: "5m"
+						}
+					);
+
+					res.send({
+						status: "success",
+						message: null,
+						data: {
+							_id: user._id,
+							email: user.email,
+							token
+						}
+					});
 				})
 				.catch(err => {
 					return new Error(err.message);

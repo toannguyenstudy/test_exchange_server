@@ -102,7 +102,8 @@ router.post("/login", (req, res) => {
 				message: null,
 				data: {
 					token,
-					email
+					email,
+					_id: user._id
 				}
 			});
 		})
@@ -125,5 +126,18 @@ router.post("/data", verifyToken, (req, res) => {
 		}
 	});
 });
+
+router.post("/tokenvalid", (req, res) => {
+	var token = req.body.token
+	jwt.verify(token, 'toannguyen', (err, decode) => {
+		if(err){
+			return res.send({
+				status: 'error'
+			})
+		}else{
+			
+		}
+	})
+})
 
 module.exports = router;

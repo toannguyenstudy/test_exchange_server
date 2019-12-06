@@ -5,9 +5,10 @@ var openOrderSchema = new Schema(
 	{
 		user: { type: Schema.Types.ObjectId, ref: "user" },
 		coin: { type: Schema.Types.ObjectId, ref: "coin" },
-		type: ["buy", "sell"],
+		type: { type: String, enum: ["buy", "sell"] },
 		amount: Number,
-		price: Number
+		price: Number,
+		create_at: { type: Number, default: Date.now() }
 	},
 	{ timestamps: true }
 );

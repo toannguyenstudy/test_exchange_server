@@ -17,7 +17,8 @@ var userSchema = new Schema(
 				total_amount: { type: Number, default: 0 },
 				available: { type: Number, default: 0 }
 			}
-		]
+		],
+		open_orders: [{ type: Schema.Types.ObjectId, ref: "open_order" }]
 	},
 	{ timestamps: true }
 );

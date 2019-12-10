@@ -12,13 +12,10 @@ var userSchema = new Schema(
 		bank: String,
 		balance: [
 			{
-				coin: { type: Schema.Types.ObjectId, ref: "coin" },
-				address: { type: String, default: null },
-				total_amount: { type: Number, default: 0 },
-				available: { type: Number, default: 0 }
+				type: Schema.Types.ObjectId,
+				ref: "balance"
 			}
-		],
-		open_orders: [{ type: Schema.Types.ObjectId, ref: "open_order" }]
+		]
 	},
 	{ timestamps: true }
 );

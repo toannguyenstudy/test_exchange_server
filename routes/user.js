@@ -5,6 +5,7 @@ const jwt = require("jsonwebtoken");
 const bcrypt = require("bcrypt");
 
 var User = require("../models/user");
+var Balance = require("../models/balance");
 
 /**
  * middleware check Json Web Token valid
@@ -116,28 +117,97 @@ router.post("/login", (req, res) => {
 		});
 });
 
-router.post("/data", verifyToken, (req, res) => {
-	res.send({
-		status: "success",
-		message: null,
-		data: {
-			_id: req._id,
-			email: req.email
+router.post("/data", async (req, res) => {
+	var balance = await Balance.findOne({
+		user: "5def1e1a9244822038fc62f8",
+		coin: "5deb59da0298820b382490db"
+	});
+	// .populate("user", "email")
+	// .populate("coin");
+	if (!balance) return res.send("nothing!!!");
+	res.send(balance);
+});
+
+router.post("/tokenvalid", (req, res) => {
+	var token = req.body.token;
+	jwt.verify(token, "toannguyen", (err, decode) => {
+		if (err) {
+			return res.send({
+				status: "error"
+			});
+		} else {
 		}
 	});
 });
 
-router.post("/tokenvalid", (req, res) => {
-	var token = req.body.token
-	jwt.verify(token, 'toannguyen', (err, decode) => {
-		if(err){
-			return res.send({
-				status: 'error'
-			})
-		}else{
-			
+router.post("/deposit", async (req, res) => {
+	var { user_id, coin_id, amount } = req.body;
+
+	//check balance created
+	var balanceExisted = await Balance.findOne({
+		user: user_id,
+		coin: coin_id
+	});
+
+	if (balanceExisted) {
+		var update = await Balance.update(
+			{
+				user: user_id,
+				coin: coin_id
+			},
+			{ amount: amount + balanceExisted.amount }
+		);
+
+		if (update.nModified) {
+			res.send({
+				status: "success",
+				message: null,
+				data: update
+			});
+		} else {
+			res.send({
+				status: "error",
+				message: "cannot update",
+				data: null
+			});
 		}
-	})
-})
+	} else {
+		Balance.create({ user: user_id, coin: coin_id, amount })
+			.then(balance => {
+				return User.updateOne(
+					{ _id: user_id },
+					{
+						$addToSet: { balance: balance._id }
+					}
+				)
+					.then(update => {
+						res.send({
+							status: "success",
+							message: null,
+							data: update
+						});
+					})
+					.catch(err => {
+						throw new Error(err.message);
+					});
+			})
+			.catch(err => {
+				res.send({
+					status: "error",
+					message: err.message,
+					data: null
+				});
+			});
+	}
+});
+
+router.get("/", (req, res) => {
+	User.find()
+		.populate("balance")
+		.populate("coin")
+		.exec((err, result) => {
+			res.send(result);
+		});
+});
 
 module.exports = router;

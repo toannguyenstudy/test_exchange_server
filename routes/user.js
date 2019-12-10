@@ -5,7 +5,9 @@ const jwt = require("jsonwebtoken");
 const bcrypt = require("bcrypt");
 
 var User = require("../models/user");
+var Coin = require("../models/coin");
 var Balance = require("../models/balance");
+var Address = require("../models/address");
 
 /**
  * middleware check Json Web Token valid
@@ -182,6 +184,51 @@ router.post("/deposit", (req, res) => {
 	);
 });
 
+router.post("/generate", (req, res) => {
+	var { user_id, coin_id } = req.body;
+	Address.findOne({
+		user: user_id,
+		coin: coin_id
+	}).then(address => {
+		if (address) throw new Error("address generated already");
+		Coin.findOne({ _id: coin_id })
+			.select("symbol")
+			.then(coin => {
+				let coinAddress = generateAddress(coin.symbol);
+				address = new Address({
+					user: user_id,
+					coin: coin_id,
+					address: coinAddress
+				});
+
+				address
+					.save()
+					.then(result => {
+						User.updateOne(
+							{ _id: user_id },
+							{
+								$addToSet: {
+									address: result._id
+								}
+							}
+						)
+							.then(ok => {
+								res.send(ok);
+							})
+							.catch(err => {
+								res.send(err.message + "219");
+							});
+					})
+					.catch(err => {
+						res.send(err.message + "223");
+					});
+			})
+			.catch(err => {
+				res.send(err.message + "227");
+			});
+	});
+});
+
 router.get("/", (req, res) => {
 	User.find()
 		.populate("balance")
@@ -190,5 +237,18 @@ router.get("/", (req, res) => {
 			res.send(result);
 		});
 });
+
+function generateAddress(coin) {
+	var result = "";
+	var characters =
+		"ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
+	var charactersLength = characters.length;
+	for (var i = 0; i < 34; i++) {
+		result += characters.charAt(
+			Math.floor(Math.random() * charactersLength)
+		);
+	}
+	return `${coin}-${result}`;
+}
 
 module.exports = router;

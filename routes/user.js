@@ -128,77 +128,58 @@ router.post("/data", async (req, res) => {
 	res.send(balance);
 });
 
-router.post("/tokenvalid", (req, res) => {
-	var token = req.body.token;
-	jwt.verify(token, "toannguyen", (err, decode) => {
-		if (err) {
-			return res.send({
-				status: "error"
-			});
-		} else {
-		}
-	});
-});
-
-router.post("/deposit", async (req, res) => {
+//! Deposit coin
+//? { user_id } : Id of user
+//? { coin_id } : Id of coin
+//? { amount } : amount of coin deposit
+//! if balance exist with {coin_id & user_id} then update amount
+//! if balance not exist then add new balance
+router.post("/deposit", (req, res) => {
 	var { user_id, coin_id, amount } = req.body;
 
-	//check balance created
-	var balanceExisted = await Balance.findOne({
-		user: user_id,
-		coin: coin_id
-	});
-
-	if (balanceExisted) {
-		var update = await Balance.update(
-			{
-				user: user_id,
-				coin: coin_id
-			},
-			{ amount: amount + balanceExisted.amount }
-		);
-
-		if (update.nModified) {
-			res.send({
-				status: "success",
-				message: null,
-				data: update
-			});
-		} else {
-			res.send({
-				status: "error",
-				message: "cannot update",
-				data: null
-			});
-		}
-	} else {
-		Balance.create({ user: user_id, coin: coin_id, amount })
-			.then(balance => {
-				return User.updateOne(
-					{ _id: user_id },
-					{
-						$addToSet: { balance: balance._id }
-					}
-				)
-					.then(update => {
-						res.send({
-							status: "success",
-							message: null,
-							data: update
-						});
-					})
-					.catch(err => {
-						throw new Error(err.message);
-					});
-			})
-			.catch(err => {
-				res.send({
-					status: "error",
-					message: err.message,
-					data: null
+	Balance.findOne(
+		{
+			user: user_id,
+			coin: coin_id
+		},
+		(err, balance) => {
+			if (err) {
+				return res.send({ status: "error", message: err, data: null });
+			}
+			if (balance) {
+				balance.amount += amount;
+			} else {
+				balance = new Balance({
+					user: user_id,
+					coin: coin_id,
+					amount
 				});
-			});
-	}
+			}
+			balance
+				.save()
+				.then(result => {
+					return User.updateOne(
+						{ _id: user_id },
+						{
+							$addToSet: { balance: result._id }
+						}
+					)
+						.then(update => {
+							res.send({
+								status: "success",
+								message: null,
+								data: update
+							});
+						})
+						.catch(err => {
+							throw new Error(err.message);
+						});
+				})
+				.catch(err => {
+					res.send(err.message);
+				});
+		}
+	);
 });
 
 router.get("/", (req, res) => {
